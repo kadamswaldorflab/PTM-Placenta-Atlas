@@ -12,8 +12,17 @@ This repository contains the code and instructions to reproduce the results from
 - `results/` — Output figures/tables from the paper.
 - `docs/` — Additional documentation.
 
-## Installation
+## Installation (R packages)
 ```bash
 git clone https://github.com/kadamswaldorflab/PTM-Placenta-Atlas.git
 cd PTM-Placenta-Atlas
-pip install -r requirements.txt
+```
+```R
+pkgs <- readLines("requirements-R.txt")
+install.packages(pkgs)
+```
+
+## Installation (Python packages)
+```bash
+cd PTM-Placenta-Atlas/python
+pip install -r requirements-python.txt
