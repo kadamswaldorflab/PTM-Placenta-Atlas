@@ -26,3 +26,6 @@ install.packages(pkgs)
 ```bash
 cd PTM-Placenta-Atlas
 pip install -r requirements-python.txt
+```
+## USAGE
+```bash
