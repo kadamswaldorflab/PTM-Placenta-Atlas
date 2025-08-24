@@ -1,6 +1,6 @@
 # PTM-Placenta-Atlas
 
-! replace w/ paper link
+! https://www.biorxiv.org/content/10.1101/2025.08.15.669966v1
 ! replace w/ GEO access
 
 ## Overview
