@@ -5,7 +5,7 @@
 
 ## Overview
 This repository contains the code and instructions to reproduce the results from:
-> **"A single-cell transcriptomic atlas of the pigtail macaque placenta in late gestation "**, Amanda Li, Richard Li, Hazel Huang, Hong Zhao, Briana Del Rosario, Miranda Li, Edmunda Li, Andrew Vo, Gygeria Manuel, Orlando Cervantes1,6, Raj Kapur7,8, Jeff Munson9, Austyn Orvis, Michelle Coleman, Melissa Berg11, Britni Curtis, Brenna Menz, Jin Dai, Inah Golez, Solomon Wangari, Chris English, Audrey Baldessari, Lakshmi Rajagopal, John Cornelius, Kristina Adams Waldorf 
+> **"A single-cell transcriptomic atlas of the pigtail macaque placenta in late gestation "**, Amanda Li, Richard Li, Hazel Huang, Hong Zhao, Briana Del Rosario, Miranda Li, Edmunda Li, Andrew Vo, Gygeria Manuel, Orlando Cervantes, Raj Kapur, Jeff Munson9, Austyn Orvis, Michelle Coleman, Melissa Berg, Britni Curtis, Brenna Menz, Jin Dai, Inah Golez, Solomon Wangari, Chris English, Audrey Baldessari, Lakshmi Rajagopal, John Cornelius, Kristina Adams Waldorf 
 
 ## Repository Structure
 - `src/` — Source code.
