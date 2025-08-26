@@ -1,7 +1,7 @@
 # PTM-Placenta-Atlas
 
 ! https://www.biorxiv.org/content/10.1101/2025.08.15.669966v1
-! replace w/ GEO access
+! https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE305531
 
 ## Overview
 This repository contains the code and instructions to reproduce the results from:
