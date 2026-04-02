@@ -36,6 +36,7 @@ library(dplyr)
 library(patchwork)
 
 set.seed(42)
+gradient <- c("blue", "white", "red")
 # needs to be set for large dataset analysis
 options(future.globals.maxSize = 1e20)
 # n_cores <- parallelly::availableCores(constraints = "cluster")
@@ -516,6 +517,337 @@ write.csv(combined, "full_placenta_metadata.csv", row.names = FALSE)
 cat("Saved metadata for full dataset with", nrow(combined), "cells\n")
 ```
 ```{r}
-asdf
+DimPlot_scCustom(mac_subset, reduction = "umap")
+
+mac_subset <- FindClusters(mac_subset, resolution = 0.15)
+DimPlot_scCustom(mac_subset, reduction = "umap", label = TRUE) +
+  ggtitle("Macrophage Subset — Resolution 0.15")
+```
+```{r Use Plotly to dynamically lasso cells}
+umap_coords <- as.data.frame(Embeddings(mac_subset, "umap"))
+cluster_labels <- as.character(Idents(mac_subset))
+
+ui <- fluidPage(
+  plotlyOutput("umap", height = "600px"),
+  verbatimTextOutput("selected"),
+  actionButton("save", "Save Selected Cells")
+)
+
+server <- function(input, output, session) {
+  output$umap <- renderPlotly({
+    plot_ly(umap_coords, x = ~umap_1, y = ~umap_2,
+            type = "scattergl",
+            mode = "markers",
+            marker = list(size = 3),
+            text = cluster_labels,
+            hovertemplate = "Cluster: %{text}<extra></extra>",
+            source = "umap") %>%
+      layout(dragmode = "lasso")
+  })
+  
+  selected_cells <- reactive({
+    event_data("plotly_selected", source = "umap")
+  })
+  
+  output$selected <- renderPrint({
+    req(selected_cells())
+    paste("Selected:", nrow(selected_cells()), "cells")
+  })
+  
+  observeEvent(input$save, {
+    req(selected_cells())
+    cells <- rownames(umap_coords)[selected_cells()$pointNumber + 1]
+    saveRDS(cells, "gated_cells.rds")
+    showNotification("Cells saved to gated_cells.rds")
+  })
+}
+
+shinyApp(ui, server)
+```
+```{r rename lassoed cells}
+# Load saved cells
+gated_cells <- readRDS("gated_cells.rds")
+
+mac_subset$updated_clusters <- Idents(mac_subset)
+
+# Add gated cells as a new cell type in your existing cluster column
+mac_subset$updated_clusters <- as.character(mac_subset$updated_clusters)
+mac_subset$updated_clusters[gated_cells] <- "HB"
+
+# Convert back to factor if needed
+mac_subset$updated_clusters <- as.factor(mac_subset$updated_clusters)
+
+Idents(mac_subset) <- "updated_clusters"
+# Verify
+table(mac_subset$updated_clusters)
+table(Idents(mac_subset))
+```
+```{r}
+mac_subset <- RenameIdents(mac_subset, "0" = "M2", "1" = "MDM", "3" = "M1", "4" = "NEUT", "6" = "M2a MAC", "7" = "FMAC", "9" = "M2")
+mac_subset$cell_type_v5 <- Idents(mac_subset)
+DimPlot_scCustom(mac_subset, reduction = "umap", label = TRUE, group.by = "cell_type_v5")
+```
+
+```{r Use Plotly to dynamically lasso cells}
+umap_coords <- as.data.frame(Embeddings(mac_subset, "umap"))
+cluster_labels <- as.character(Idents(mac_subset))
+
+ui <- fluidPage(
+  plotlyOutput("umap", height = "600px"),
+  verbatimTextOutput("selected"),
+  actionButton("save", "Save Selected Cells")
+)
+
+server <- function(input, output, session) {
+  output$umap <- renderPlotly({
+    plot_ly(umap_coords, x = ~umap_1, y = ~umap_2,
+            type = "scattergl",
+            mode = "markers",
+            marker = list(size = 3),
+            text = cluster_labels,
+            hovertemplate = "Cluster: %{text}<extra></extra>",
+            source = "umap") %>%
+      layout(dragmode = "lasso")
+  })
+  
+  selected_cells <- reactive({
+    event_data("plotly_selected", source = "umap")
+  })
+  
+  output$selected <- renderPrint({
+    req(selected_cells())
+    paste("Selected:", nrow(selected_cells()), "cells")
+  })
+  
+  observeEvent(input$save, {
+    req(selected_cells())
+    cells <- rownames(umap_coords)[selected_cells()$pointNumber + 1]
+    saveRDS(cells, "gated_cells.rds")
+    showNotification("Cells saved to gated_cells.rds")
+  })
+}
+
+shinyApp(ui, server)
+```
+```{r rename lassoed cells}
+# Load saved cells
+gated_cells <- readRDS("gated_cells.rds")
+
+# mac_subset$cell_type_v5 <- Idents(mac_subset)
+
+# Add gated cells as a new cell type in your existing cluster column
+mac_subset$cell_type_v5 <- as.character(mac_subset$cell_type_v5)
+mac_subset$cell_type_v5[gated_cells] <- "2"
+
+# Convert back to factor if needed
+mac_subset$cell_type_v5 <- as.factor(mac_subset$cell_type_v5)
+
+Idents(mac_subset) <- "cell_type_v5"
+# Verify
+table(mac_subset$cell_type_v5)
+table(Idents(mac_subset))
+```
+
+```{r Merge #5 with nearest neighbors}
+scattered_cluster <- "5"
+
+# Get the UMAP coordinates and cluster identities
+umap_coords <- as.data.frame(Embeddings(mac_subset, "umap"))
+cluster_ids <- as.character(Idents(mac_subset))
+names(cluster_ids) <- rownames(umap_coords)
+
+# Separate scattered cells from the rest
+scattered_cells <- rownames(umap_coords)[cluster_ids == scattered_cluster]
+reference_cells <- rownames(umap_coords)[cluster_ids != scattered_cluster]
+
+# For each scattered cell, find the nearest neighbor among reference cells
+
+scattered_coords <- umap_coords[scattered_cells, ]
+reference_coords <- umap_coords[reference_cells, ]
+
+nn <- get.knnx(data = reference_coords, query = scattered_coords, k = 1)
+
+# Assign each scattered cell the cluster identity of its nearest neighbor
+new_labels <- cluster_ids
+for (i in seq_along(scattered_cells)) {
+  nearest_cell <- reference_cells[nn$nn.index[i]]
+  new_labels[scattered_cells[i]] <- cluster_ids[nearest_cell]
+}
+
+# Apply the new labels back to the Seurat object
+Idents(mac_subset) <- new_labels
+
+# Visualize to confirm
+DimPlot_scCustom(mac_subset, reduction = "umap", label = TRUE) +
+  ggtitle("Macrophage Subset — Scattered Cluster Merged")
+```
+
+```{r}
+mac_subset$cell_type_v5 <- Idents(mac_subset)
+saveRDS(mac_subset, "mac_subset_merged.rds")
+```
+
+
+```{r Transfer labels from subset to main object}
+# Check what your new cluster column is called in the subset
+head(Idents(mac_subset))
+
+# Transfer new labels back to the full object
+
+# Convert to character first
+placenta_seurat$cell_type_v4 <- as.character(placenta_seurat$cell_type_v4)
+
+# Now the assignment will work
+placenta_seurat$cell_type_v4[colnames(mac_subset)] <- as.character(Idents(mac_subset))
+
+# Optional: convert back to factor if needed
+placenta_seurat$cell_type_v4 <- as.factor(placenta_seurat$cell_type_v4)
+
+# Verify the transfer worked
+table(placenta_seurat$cell_type_v4)
+
+# Check no cells were lost or duplicated
+length(colnames(mac_subset)) == sum(colnames(placenta_seurat) %in% colnames(mac_subset))
+
+# Visualize on the main UMAP to confirm
+Idents(placenta_seurat) <- "cell_type_v4"
+
+DimPlot_scCustom(placenta_seurat, reduction = "umap", label = TRUE, repel = TRUE, label.box = TRUE, aspect_ratio = 0.75, group.by = "cell_type_v4")
+ggsave("umap_v9.pdf", width = 15, height = 10, units = "in", dpi = 300)
+```
+```{r}
+DimPlot_scCustom(mac_subset, reduction = "umap", label = TRUE, repel = TRUE, label.box = TRUE, aspect_ratio = 0.75, group.by = "cell_type_v4")
+```
+
+```{r}
+clusters_of_interest <- c("HB", "FMAC", "MAC1", "MAC2", "Mo-MAC1", "Mo-MAC2", "NEUT", "MAC3")
+
+mac_subset <- subset(placenta_seurat, idents = clusters_of_interest)
+```
+
+```{r}
+mac_subset <- SCTransform(mac_subset)
+mac_subset <- RunPCA(mac_subset, npcs = 30)
+
+ElbowPlot(mac_subset, ndims = 30)
+
+mac_subset <- RunHarmony(mac_subset,
+                         group.by.vars = "sample",
+                         reduction = "pca",
+                         assay.use = "SCT",
+                         reduction.save = "harmony")
+
+mac_subset <- FindNeighbors(mac_subset, reduction = "harmony", dims = 1:30)
+mac_subset <- FindClusters(mac_subset, resolution = 0.15)
+mac_subset <- RunUMAP(mac_subset, reduction = "harmony", dims = 1:30)
+
+p1 <- DimPlot_scCustom(mac_subset, reduction = "umap", label = TRUE) +
+  ggtitle("Macrophage Subset — Resolution 0.15")
+ggsave("mac_umap_1.pdf", width = 15, height = 10, units = "in", dpi = 300)
+```
+```{r}
+# 7B (w/ Subset)
+macro_B <- DotPlot_scCustom(mac_subset, 
+                         features = c("CEACAM8", "SELL", "CSF3R", "CD177", "OLFM4", "CLEC7A", "ADAMDEC1", "IL12B", "THBS1", "MAMU-DRB1", 
+                                      "CD80", "IL10", "IL1B", "IL6", "TNF", "CD209", "SPP1", "FOLR2", "FCGR1A", "HMOX1", 
+                                      "LYVE1", "CCL2", "DDX3Y", "RPS4Y1", "MRC1", "CD163", "CD68", "CD14", "CCL17",
+                                      "CCR2", "S100A8", "S100A9", "LYZ", "MS4A7", "ITGAM"), 
+                         remove_axis_titles = FALSE,  flip_axes = TRUE, x_lab_rotate = TRUE, colors_use = gradient) + 
+  labs(x = "Gene", y = "Cluster")
+
+macro_B_filtered <- macro_B + 
+  guides(size = guide_legend(title = "Percent expressed", order = 2),
+         color = guide_colorbar(title = "Avg. Expression (scaled)", order = 1))
+macro_B_filtered
+```
+```{r}
+p1 | macro_B_filtered
+ggsave("macro_plots.pdf", width = 25, height = 10)
+
+p2 <- DimPlot_scCustom(mac_subset, reduction = "umap", label = TRUE, group.by = "cell_type_v4") +
+  ggtitle("Main UMAP calls")
+
+p1|p2
+ggsave("macro_plots_2.pdf", width = 25, height = 10)
+```
+```{r}
+DimPlot_scCustom(mac_subset, reduction = "umap", label = TRUE, group.by = "tissue")
+
+mac_subset$cell_type_v4 <- Idents(mac_subset)
+```
+
+```{r}
+umap_df_sub1 <- data.frame(
+  UMAP_1  = Embeddings(mac_subset, reduction = "umap")[, 1],
+  UMAP_2  = Embeddings(mac_subset, reduction = "umap")[, 2],
+  cluster = mac_subset$cell_type_v4,
+  tissue  = mac_subset$tissue
+)
+
+label_coords_sub1 <- umap_df_sub1 %>%
+  group_by(cluster) %>%
+  summarise(UMAP_1 = median(UMAP_1), UMAP_2 = median(UMAP_2))
+
+x_range <- range(umap_df_sub1$UMAP_1)
+y_range <- range(umap_df_sub1$UMAP_2)
+padding <- 1.5
+
+# Step 7: Plot
+p_sub1 <- DimPlot(mac_subset,
+                 group.by = "tissue",
+                 reduction = "umap",
+                 cols = c("CV" = "#E41A1C",
+                          "Decidua" = "#4DAF4A",
+                          "MemInoc" = "#377EB8"),
+                 pt.size = 0.5) +
+  scale_color_manual(values = c("CV" = "#E41A1C",
+                                 "Decidua" = "#4DAF4A",
+                                 "MemInoc" = "#377EB8"),
+                     labels = c("CV" = "Disc",
+                                "Decidua" = "Dec",
+                                "MemInoc" = "Mem")) +
+  geom_density_2d(data = umap_df_sub1,
+                  aes(x = UMAP_1, y = UMAP_2, group = cluster),
+                  color = "black",
+                  linewidth = 0.5,
+                  contour_var = "ndensity",
+                  breaks = 0.2,
+                  adjust = 2) +
+  geom_label_repel(data = label_coords_sub1,
+                   aes(x = UMAP_1, y = UMAP_2, label = cluster),
+                   size = 3,
+                   fontface = "bold",
+                   fill = "white",
+                   alpha = 0.7,
+                   box.padding = 0.5,
+                   point.padding = 0.3,
+                   max.overlaps = Inf,
+                   segment.color = "grey40",
+                   segment.size = 0.3) +
+  scale_x_continuous(limits = c(x_range[1] - padding, x_range[2] + padding)) +
+  scale_y_continuous(limits = c(y_range[1] - padding, y_range[2] + padding)) +
+  coord_fixed(ratio = 0.75, clip = "off") +
+  ggtitle("Subset UMAP with cell type labels") +
+  theme(legend.position = "right",
+        plot.margin = margin(10, 20, 10, 10))+
+  xlab("UMAP 1") +
+  ylab("UMAP 2")
+
+# Step 8: Save
+ggsave("subset_mac.pdf", plot = p_sub1, width = 15, height = 10)
+
+
+p3 <- FeaturePlot_scCustom(mac_subset, features = "RPS4Y1", reduction = "umap")
+```
+```{r}
+p_sub1 | p3
+ggsave("mac_plot_3.pdf", width = 25, height = 10)
+```
+```{r}
+FeaturePlot_scCustom(mac_subset, features = c('FCN1', 'S100A8', 'S100A9', 'VCAN', 'CCR2'), reduction = "umap", num_columns = 3)
+ggsave("mac_plot_4.pdf", width = 25, height = 10)
+```
+```{r}
+
 ```
 
