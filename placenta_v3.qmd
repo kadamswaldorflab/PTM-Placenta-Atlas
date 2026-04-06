@@ -848,6 +848,149 @@ FeaturePlot_scCustom(mac_subset, features = c('FCN1', 'S100A8', 'S100A9', 'VCAN'
 ggsave("mac_plot_4.pdf", width = 25, height = 10)
 ```
 ```{r}
+mac_subset <- FindSubCluster(mac_subset, "8", graph.name = "SCT_nn", resolution = 0.25)
+```
+```{r}
+p1 <- DimPlot_scCustom(mac_subset, reduction = "umap", label = TRUE, group.by = "sub.cluster") +
+  ggtitle("Macrophage Subset — 8 Sub")
+ggsave("mac_umap_1.pdf", width = 15, height = 10, units = "in", dpi = 300, plot = p1)
+```
+```{r}
+# 7B (w/ Subset)
+macro_B <- DotPlot_scCustom(mac_subset, 
+                         features = c("CEACAM8", "SELL", "CSF3R", "CD177", "OLFM4", "CLEC7A", "ADAMDEC1", "IL12B", "THBS1", "MAMU-DRB1", 
+                                      "CD80", "IL10", "IL1B", "IL6", "TNF", "CD209", "SPP1", "FOLR2", "FCGR1A", "HMOX1", 
+                                      "LYVE1", "CCL2", "DDX3Y", "RPS4Y1", "MRC1", "CD163", "CD68", "CD14", "CCL17",
+                                      "CCR2", "S100A8", "S100A9", "LYZ", "MS4A7", "ITGAM"), 
+                         group.by = "sub.cluster",
+                         remove_axis_titles = FALSE,  flip_axes = TRUE, x_lab_rotate = TRUE, colors_use = gradient) + 
+  labs(x = "Gene", y = "Cluster")
 
+macro_B_filtered <- macro_B + 
+  guides(size = guide_legend(title = "Percent expressed", order = 2),
+         color = guide_colorbar(title = "Avg. Expression (scaled)", order = 1))
+macro_B_filtered
+```
+```{r}
+mac_subset$cell_type_v4 <- mac_subset$sub.cluster
+Idents(mac_subset) <- "cell_type_v4"
+mac_subset <- FindSubCluster(mac_subset, "3", graph.name = "SCT_nn", resolution = 0.2)
+```
+```{r}
+p1 <- DimPlot_scCustom(mac_subset, reduction = "umap", label = TRUE, group.by = "sub.cluster") +
+  ggtitle("Macrophage Subset — 8, 3 Sub")
+ggsave("mac_umap_1.pdf", width = 15, height = 10, units = "in", dpi = 300, plot = p1)
+```
+```{r}
+# 7B (w/ Subset)
+macro_B <- DotPlot_scCustom(mac_subset, 
+                         features = c("CEACAM8", "SELL", "CSF3R", "CD177", "OLFM4", "CLEC7A", "ADAMDEC1", "IL12B", "THBS1", "MAMU-DRB1", 
+                                      "CD80", "IL10", "IL1B", "IL6", "TNF", "CD209", "SPP1", "FOLR2", "FCGR1A", "HMOX1", 
+                                      "LYVE1", "CCL2", "DDX3Y", "RPS4Y1", "MRC1", "CD163", "CD68", "CD14", "CCL17",
+                                      "CCR2", "S100A8", "S100A9", "LYZ", "MS4A7", "ITGAM"), 
+                         group.by = "sub.cluster",
+                         remove_axis_titles = FALSE,  flip_axes = TRUE, x_lab_rotate = TRUE, colors_use = gradient) + 
+  labs(x = "Gene", y = "Cluster")
+
+macro_B_filtered <- macro_B + 
+  guides(size = guide_legend(title = "Percent expressed", order = 2),
+         color = guide_colorbar(title = "Avg. Expression (scaled)", order = 1))
+macro_B_filtered
+```
+
+```{r}
+p1 | macro_B_filtered
+ggsave("macro_plots.pdf", width = 25, height = 10)
+```
+
+```{r}
+
+Idents(mac_subset) <- "sub.cluster"
+mac_subset <- RenameIdents(mac_subset, "1" = "PAMM", "10" = "M2a", "11" = "Mono")
+mac_subset <- RenameIdents(mac_subset, "3_3" = "3_0", "3_4" = "3_0", "8_4" = "8_3")
+mac_subset <- RenameIdents(mac_subset, "Mono" = "11")
+mac_subset <- RenameIdents(mac_subset, "3_1" = "Mono")
+mac_subset <- RenameIdents(mac_subset, "3_2" = "NEUT", "3_0" = "NEUT")
+mac_subset <- RenameIdents(mac_subset, "2" = "0")
+Cluster_Highlight_Plot(mac_subset, "5", reduction = "umap")
+```
+```{r}
+mac_subset$cell_type_v5 <- Idents(mac_subset)
+Idents(mac_subset) <- "cell_type_v5"
+mac_subset <- FindSubCluster(mac_subset, "5", graph.name = "SCT_nn", resolution = 0.05)
+```
+```{r}
+p1 <- DimPlot_scCustom(mac_subset, reduction = "umap", label = TRUE, group.by = "sub.cluster") +
+  ggtitle("Macrophage Subset — 8, 3 Sub")
+ggsave("mac_umap_1.pdf", width = 15, height = 10, units = "in", dpi = 300, plot = p1)
+```
+```{r}
+Idents(mac_subset) <- "sub.cluster"
+mac_subset <- RenameIdents(mac_subset, "9" = "ADAMDEC1+MAC")
+Cluster_Highlight_Plot(mac_subset, "3_5", reduction = "umap")
+
+
+```
+
+```{r}
+p1 <- DimPlot_scCustom(mac_subset, reduction = "umap", label = TRUE) 
+ggsave("mac_umap_1.pdf", width = 15, height = 10, units = "in", dpi = 300, plot = p1)
+```
+```{r}
+# 7B (w/ Subset)
+macro_B <- DotPlot_scCustom(mac_subset, 
+                         features = c("CEACAM8", "SELL", "CSF3R", "CD177", "OLFM4", "CLEC7A", "ADAMDEC1", "IL12B", "THBS1", "MAMU-DRB1", 
+                                      "CD80", "IL10", "IL1B", "IL6", "TNF", "CD209", "SPP1", "FOLR2", "FCGR1A", "HMOX1", 
+                                      "LYVE1", "CCL2", "DDX3Y", "RPS4Y1", "MRC1", "CD163", "CD68", "CD14", "CCL17",
+                                      "CCR2", "S100A8", "S100A9", "LYZ", "MS4A7", "ITGAM"), 
+                         
+                         remove_axis_titles = FALSE,  flip_axes = TRUE, x_lab_rotate = TRUE, colors_use = gradient) + 
+  labs(x = "Gene", y = "Cluster")
+
+macro_B_filtered <- macro_B + 
+  guides(size = guide_legend(title = "Percent expressed", order = 2),
+         color = guide_colorbar(title = "Avg. Expression (scaled)", order = 1))
+macro_B_filtered
+```
+```{r}
+mac_subset <- RenameIdents(mac_subset, "5_0" = "SPP1+MAC")
+mac_subset <- RenameIdents(mac_subset, "4" = "M1", "5_1" = "0")
+mac_subset <- RenameIdents(mac_subset, "8_0" = "FMAC", "8_1" = "HB")
+mac_subset <- RenameIdents(mac_subset, "8_3" = "LYVE+MAC", "8_2" = "LYVE+MAC")
+mac_subset <- RenameIdents(mac_subset, "3_5" = "PAMM", "5_2" = "0", "5_3" = "0")
+
+markers <- FindAllMarkers(mac_subset)
+```
+```{r}
+mac_subset <- PrepSCTFindMarkers(mac_subset)
+
+all_markers <- FindAllMarkers(object = mac_subset) %>%
+  Add_Pct_Diff() 
+
+top_markers <- Extract_Top_Markers(marker_dataframe = markers, num_genes = 7, named_vector = FALSE,
+                                   make_unique = TRUE, rank_by = "avg_log2FC")
+plots <- Clustered_DotPlot(seurat_object = mac_subset, features = top_markers, flip = TRUE, x_lab_rotate = 90, elbow_kmax = 30)
+plots[[1]]
+plots <- Clustered_DotPlot(seurat_object = mac_subset, features = top_markers, flip = TRUE, x_lab_rotate = 90, k = 13)
+
+top_20_markers <- Extract_Top_Markers(marker_dataframe = markers, num_genes = 20, data_frame = TRUE,
+                                      rank_by = "avg_log2FC")
+
+
+write.csv(top_20_markers, file = "top_20_markers_immune.csv")
+```
+```{r}
+#| eval: true
+#| echo: false
+#| output: false
+
+pdf("mac_mark.pdf", width = 20, height = 8)
+dot_plot <- Clustered_DotPlot(seurat_object = mac_subset, features = top_markers, flip = TRUE, x_lab_rotate = 90, k = 13)
+print(dot_plot)
+dev.off()
+```
+```{r}
+saveRDS(mac_subset, file = "mac_subset_v2.RDS")
+saveRDS(placenta_seurat, file = "placenta_mapped_v4.RDS")
 ```
 
