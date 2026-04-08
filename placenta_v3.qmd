@@ -43,9 +43,13 @@ options(future.globals.maxSize = 1e20)
 # plan(multisession, workers = n_cores)
 # plan(sequential)
 # enableWGCNAThreads(nThreads = 16)
-placenta_seurat <- readRDS("placenta_mapped_v3.RDS")
+placenta_seurat <- readRDS("placenta_mapped_v5.RDS")
 
-mac_subset <- readRDS("mac_subset.RDS")
+mac_subset <- readRDS("mac_subset_v3.RDS")
+
+t_subset <- readRDS("t_subset_v3.RDS")
+
+tb_subset <- readRDS("tb_subset_v3.RDS")
 ```
 
 ```{r save UMAP function}
@@ -967,19 +971,19 @@ mac_subset <- PrepSCTFindMarkers(mac_subset)
 all_markers <- FindAllMarkers(object = mac_subset) %>%
   Add_Pct_Diff() 
 
-top_markers <- Extract_Top_Markers(marker_dataframe = markers, num_genes = 7, named_vector = FALSE,
+top_markers <- Extract_Top_Markers(marker_dataframe = all_markers, num_genes = 7, named_vector = FALSE,
                                    make_unique = TRUE, rank_by = "avg_log2FC")
 plots <- Clustered_DotPlot(seurat_object = mac_subset, features = top_markers, flip = TRUE, x_lab_rotate = 90, elbow_kmax = 30)
 plots[[1]]
 plots <- Clustered_DotPlot(seurat_object = mac_subset, features = top_markers, flip = TRUE, x_lab_rotate = 90, k = 13)
 
-top_20_markers <- Extract_Top_Markers(marker_dataframe = markers, num_genes = 20, data_frame = TRUE,
+top_20_markers <- Extract_Top_Markers(marker_dataframe = all_markers, num_genes = 20, data_frame = TRUE,
                                       rank_by = "avg_log2FC")
 
 
 write.csv(top_20_markers, file = "top_20_markers_immune.csv")
 ```
-```{r}
+```{r code to save clustered dot plots}
 #| eval: true
 #| echo: false
 #| output: false
@@ -992,5 +996,459 @@ dev.off()
 ```{r}
 saveRDS(mac_subset, file = "mac_subset_v2.RDS")
 saveRDS(placenta_seurat, file = "placenta_mapped_v4.RDS")
+```
+
+```{r}
+# Check what your new cluster column is called in the subset
+head(Idents(mac_subset))
+
+# Idents(mac_subset) <- mac_subset$updated_clusters
+# Transfer new labels back to the full object
+
+# Convert to character first
+placenta_seurat$cell_type_v4 <- as.character(placenta_seurat$cell_type_v4)
+
+# Now the assignment will work
+placenta_seurat$cell_type_v4[colnames(mac_subset)] <- as.character(Idents(mac_subset))
+
+# Optional: convert back to factor if needed
+placenta_seurat$cell_type_v4 <- as.factor(placenta_seurat$cell_type_v4)
+
+# Verify the transfer worked
+table(placenta_seurat$cell_type_v4)
+
+# Check no cells were lost or duplicated
+length(colnames(mac_subset)) == sum(colnames(placenta_seurat) %in% colnames(mac_subset))
+
+# Visualize on the main UMAP to confirm
+Idents(placenta_seurat) <- "cell_type_v4"
+
+DimPlot_scCustom(placenta_seurat, reduction = "umap", label = TRUE, repel = TRUE, label.box = TRUE, aspect_ratio = 0.75, group.by = "cell_type_v4")
+ggsave("umap_v10.pdf", width = 15, height = 10, units = "in", dpi = 300)
+```
+```{r}
+placenta_seurat <- PrepSCTFindMarkers(placenta_seurat)
+
+all_markers <- FindAllMarkers(object = placenta_seurat) %>%
+  Add_Pct_Diff() 
+
+top_markers <- Extract_Top_Markers(marker_dataframe = all_markers, num_genes = 7, named_vector = FALSE,
+                                   make_unique = TRUE, rank_by = "avg_log2FC")
+plots <- Clustered_DotPlot(seurat_object = placenta_seurat, features = top_markers, flip = TRUE, x_lab_rotate = 90, elbow_kmax = 30)
+plots[[1]]
+plots <- Clustered_DotPlot(seurat_object = placenta_seurat, features = top_markers, flip = TRUE, x_lab_rotate = 90, k = 27)
+
+top_20_markers <- Extract_Top_Markers(marker_dataframe = markers, num_genes = 20, data_frame = TRUE,
+                                      rank_by = "avg_log2FC")
+
+
+write.csv(top_20_markers, file = "top_20_markers_immune.csv")
+```
+```{r code to save clustered dot plots}
+#| eval: true
+#| echo: false
+#| output: false
+
+pdf("placenta_clust.pdf", width = 30, height = 8)
+dot_plot <- Clustered_DotPlot(seurat_object = placenta_seurat, features = top_markers, flip = TRUE, x_lab_rotate = 90, k = 27)
+print(dot_plot)
+dev.off()
+```
+```{r}
+clusters_of_interest <- c("0", "11", "6", "7")
+
+top_markers <- all_markers %>%
+  filter(cluster %in% clusters_of_interest) %>%
+  Extract_Top_Markers(marker_dataframe = ., num_genes = 7, named_vector = FALSE,
+                      make_unique = TRUE, rank_by = "avg_log2FC")
+
+# Use full seurat object — all clusters shown, but only genes from clusters of interest
+plots <- Clustered_DotPlot(seurat_object = placenta_seurat, features = top_markers, flip = TRUE, x_lab_rotate = 90, elbow_kmax = 30)
+plots[[1]]
+plots <- Clustered_DotPlot(seurat_object = placenta_seurat, features = top_markers, flip = TRUE, x_lab_rotate = 90, k = 5)
+```
+```{r code to save clustered dot plots}
+#| eval: true
+#| echo: false
+#| output: false
+
+pdf("placenta_clust_unk.pdf", width = 15, height = 8)
+dot_plot <- Clustered_DotPlot(seurat_object = placenta_seurat, features = top_markers, flip = TRUE, x_lab_rotate = 90, k = 5)
+print(dot_plot)
+dev.off()
+```
+
+```{r}
+# 7B (w/ Subset)
+macro_B <- DotPlot_scCustom(placenta_seurat, 
+                         features = c("CEACAM8", "SELL", "CSF3R", "CD177", "OLFM4", "CLEC7A", "ADAMDEC1", "IL12B", "THBS1", "MAMU-DRB1", 
+                                      "CD80", "IL10", "IL1B", "IL6", "TNF", "CD209", "SPP1", "FOLR2", "FCGR1A", "HMOX1", 
+                                      "LYVE1", "CCL2", "DDX3Y", "RPS4Y1", "MRC1", "CD163", "CD68", "CD14", "CCL17",
+                                      "CCR2", "S100A8", "S100A9", "LYZ", "MS4A7", "ITGAM"), 
+                         
+                         remove_axis_titles = FALSE,  flip_axes = TRUE, x_lab_rotate = TRUE, colors_use = gradient) + 
+  labs(x = "Gene", y = "Cluster")
+
+macro_B_filtered <- macro_B + 
+  guides(size = guide_legend(title = "Percent expressed", order = 2),
+         color = guide_colorbar(title = "Avg. Expression (scaled)", order = 1))
+macro_B_filtered
+
+ggsave("macro_dot_unk.pdf", plot = macro_B_filtered, width = 15, height = 10)
+```
+
+```{r}
+DimPlot_scCustom(t_subset, reduction = "umap", label = TRUE, repel = TRUE, label.box = TRUE, aspect_ratio = 0.75, group.by = "cell_type_v4")
+ggsave("umap_v10.pdf", width = 15, height = 10, units = "in", dpi = 300)
+```
+```{r}
+Idents(t_subset) <- "cell_type_v4"
+```
+```{r}
+FeaturePlot_scCustom(mac_subset, features = "SPP1", reduction = "umap")
+```
+```{r}
+VlnPlot_scCustom(mac_subset, features = c("nCount_RNA", "percent.mt", "nFeature_RNA"), pt.size = 0)
+```
+```{r}
+top_markers_c11 <- Extract_Top_Markers(
+  marker_dataframe = all_markers %>% filter(cluster == 11),
+  num_genes = 50,
+  named_vector = FALSE,
+  make_unique = TRUE,
+  rank_by = "avg_log2FC"
+)
+```
+```{r Use Plotly to dynamically lasso cells}
+umap_coords <- as.data.frame(Embeddings(t_subset, "umap"))
+cluster_labels <- as.character(Idents(t_subset))
+
+ui <- fluidPage(
+  plotlyOutput("umap", height = "600px"),
+  verbatimTextOutput("selected"),
+  actionButton("save", "Save Selected Cells")
+)
+
+server <- function(input, output, session) {
+  output$umap <- renderPlotly({
+    plot_ly(umap_coords, x = ~umap_1, y = ~umap_2,
+            type = "scattergl",
+            mode = "markers",
+            marker = list(size = 3),
+            text = cluster_labels,
+            hovertemplate = "Cluster: %{text}<extra></extra>",
+            source = "umap") %>%
+      layout(dragmode = "lasso")
+  })
+  
+  selected_cells <- reactive({
+    event_data("plotly_selected", source = "umap")
+  })
+  
+  output$selected <- renderPrint({
+    req(selected_cells())
+    paste("Selected:", nrow(selected_cells()), "cells")
+  })
+  
+  observeEvent(input$save, {
+    req(selected_cells())
+    cells <- rownames(umap_coords)[selected_cells()$pointNumber + 1]
+    saveRDS(cells, "gated_cells.rds")
+    showNotification("Cells saved to gated_cells.rds")
+  })
+}
+
+shinyApp(ui, server)
+```
+```{r rename lassoed cells}
+# Load saved cells
+gated_cells <- readRDS("gated_cells.rds")
+
+# Add gated cells as a new cell type in your existing cluster column
+t_subset$cell_type_v4 <- as.character(t_subset$cell_type_v4)
+t_subset$cell_type_v4[gated_cells] <- "unknown"
+
+# Convert back to factor if needed
+t_subset$cell_type_v4 <- as.factor(t_subset$cell_type_v4)
+
+Idents(t_subset) <- "cell_type_v4"
+# Verify
+table(t_subset$cell_type_v4)
+table(Idents(t_subset))
+```
+```{r}
+Fig_7D <- DotPlot_scCustom(t_subset, 
+                           features = c("CD3D", "CD4", "ENSMMUG00000003532", "CD8A", "FCGR3", 
+                                        "NCAM1", "TRAC", "ICOS", "CD69", "ITK", 
+                                        "THEMIS", "GRAP2", "CD28", "CD6", "BCL11B", 
+                                        "ITGAE", "IL7R", "PDCD1", "IFNG",  "FOXP3", 
+                                        "IL2RA", "ITGA1", "NKG2A", "CD94", "KLRB1", 
+                                        "NKG7", "NKG2D", "PRF1", "GZMA", "GZMB",
+                                        "GZMK",  "GZMM", "TIGIT", "CCL5", "ITGA4", 
+                                        "CD38", "CD7", "KLRD1", "ZBTB38", "ZBTB16"
+                                        ), 
+                           group.by = "cell_type_v4",
+                           remove_axis_titles = FALSE,  
+                           flip_axes = TRUE, 
+                           x_lab_rotate = TRUE, 
+                           colors_use = gradient) + 
+  labs(x = "Gene", y = "Cluster")  
+
+Fig_7D_filtered <- Fig_7D + 
+  guides(size = guide_legend(title = "Percent expressed", order = 2),
+         color = guide_colorbar(title = "Avg. Expression (scaled)", order = 1))
+
+Fig_7D_filtered
+ggsave("t_dot.pdf", width = 10, height = 10)
+```
+```{r}
+t_subset <- PrepSCTFindMarkers(t_subset)
+
+all_markers <- FindAllMarkers(object = t_subset) %>%
+  Add_Pct_Diff() 
+
+top_markers <- Extract_Top_Markers(marker_dataframe = all_markers, num_genes = 7, named_vector = FALSE,
+                                   make_unique = TRUE, rank_by = "avg_log2FC")
+plots <- Clustered_DotPlot(seurat_object = t_subset, features = top_markers, flip = TRUE, x_lab_rotate = 90, elbow_kmax = 30)
+plots[[1]]
+plots <- Clustered_DotPlot(seurat_object = t_subset, features = top_markers, flip = TRUE, x_lab_rotate = 90, k = 27)
+
+top_20_markers <- Extract_Top_Markers(marker_dataframe = markers, num_genes = 20, data_frame = TRUE,
+                                      rank_by = "avg_log2FC")
+
+
+write.csv(top_20_markers, file = "top_20_markers_immune.csv")
+
+top_markers_unk <- Extract_Top_Markers(
+  marker_dataframe = all_markers %>% filter(cluster == "unknown"),
+  num_genes = 50,
+  named_vector = FALSE,
+  make_unique = TRUE,
+  rank_by = "avg_log2FC"
+)
+```
+
+```{r}
+DimPlot_scCustom(t_subset, reduction = "umap", group.by = "tissue")
+```
+
+
+```{r}
+Fig_7D <- DotPlot_scCustom(placenta_seurat, 
+                           features = c("CD38", "MS4A1", "CD19", "CD79A", "PAX5", 
+                                        "EBF1", "BLK", "BANK1", "BACH2", "AFF3", 
+                                        "CLEC17A", "IGHM", "ENSMMUG00000015202", "JCHAIN", "ENSMMUG00000059850", 
+                                        "ENSMMUG00000044861", "ENSMMUG00000040771", "ENSMMUG00000002764", "TNFRSF17",  "MZB1"
+                                        ), 
+                           group.by = "cell_type_v4",
+                           remove_axis_titles = FALSE,  
+                           flip_axes = TRUE, 
+                           x_lab_rotate = TRUE, 
+                           colors_use = gradient) + 
+  labs(x = "Gene", y = "Cluster")  
+
+Fig_7D_filtered <- Fig_7D + 
+  scale_y_discrete(limits = c("unknown", "Plasma")) +
+  guides(size = guide_legend(title = "Percent expressed", order = 2),
+         color = guide_colorbar(title = "Avg. Expression (scaled)", order = 1))
+
+Fig_7D_filtered
+ggsave("b_dot.pdf", width = 10, height = 10)
+```
+
+```{r}
+# Check what your new cluster column is called in the subset
+head(Idents(t_subset))
+
+# Idents(t_subset) <- t_subset$updated_clusters
+# Transfer new labels back to the full object
+
+# Convert to character first
+placenta_seurat$cell_type_v4 <- as.character(placenta_seurat$cell_type_v4)
+
+# Now the assignment will work
+placenta_seurat$cell_type_v4[colnames(t_subset)] <- as.character(Idents(t_subset))
+
+# Optional: convert back to factor if needed
+placenta_seurat$cell_type_v4 <- as.factor(placenta_seurat$cell_type_v4)
+
+# Verify the transfer worked
+table(placenta_seurat$cell_type_v4)
+
+# Check no cells were lost or duplicated
+length(colnames(t_subset)) == sum(colnames(placenta_seurat) %in% colnames(t_subset))
+
+# Visualize on the main UMAP to confirm
+Idents(placenta_seurat) <- "cell_type_v4"
+
+DimPlot_scCustom(placenta_seurat, reduction = "umap", label = TRUE, repel = TRUE, label.box = TRUE, aspect_ratio = 0.75, group.by = "cell_type_v4")
+ggsave("umap_v11.pdf", width = 15, height = 10, units = "in", dpi = 300)
+```
+```{r}
+DimPlot_scCustom(tb_subset, reduction = "umap", label = TRUE, repel = TRUE, label.box = TRUE, aspect_ratio = 0.75, group.by = "tissue")
+```
+
+```{r Use Plotly to dynamically lasso cells}
+umap_coords <- as.data.frame(Embeddings(tb_subset, "umap"))
+cluster_labels <- as.character(Idents(tb_subset))
+
+ui <- fluidPage(
+  plotlyOutput("umap", height = "600px"),
+  verbatimTextOutput("selected"),
+  actionButton("save", "Save Selected Cells")
+)
+
+server <- function(input, output, session) {
+  output$umap <- renderPlotly({
+    plot_ly(umap_coords, x = ~umap_1, y = ~umap_2,
+            type = "scattergl",
+            mode = "markers",
+            marker = list(size = 3),
+            text = cluster_labels,
+            hovertemplate = "Cluster: %{text}<extra></extra>",
+            source = "umap") %>%
+      layout(dragmode = "lasso")
+  })
+  
+  selected_cells <- reactive({
+    event_data("plotly_selected", source = "umap")
+  })
+  
+  output$selected <- renderPrint({
+    req(selected_cells())
+    paste("Selected:", nrow(selected_cells()), "cells")
+  })
+  
+  observeEvent(input$save, {
+    req(selected_cells())
+    cells <- rownames(umap_coords)[selected_cells()$pointNumber + 1]
+    saveRDS(cells, "gated_cells.rds")
+    showNotification("Cells saved to gated_cells.rds")
+  })
+}
+
+shinyApp(ui, server)
+```
+```{r rename lassoed cells}
+# Load saved cells
+gated_cells <- readRDS("gated_cells.rds")
+
+# Add gated cells as a new cell type in your existing cluster column
+tb_subset$cell_type_v4 <- as.character(tb_subset$cell_type_v4)
+tb_subset$cell_type_v4[gated_cells] <- "unknown_tb"
+
+# Convert back to factor if needed
+tb_subset$cell_type_v4 <- as.factor(tb_subset$cell_type_v4)
+
+Idents(tb_subset) <- "cell_type_v4"
+# Verify
+table(tb_subset$cell_type_v4)
+table(Idents(tb_subset))
+```
+```{r}
+# Check what your new cluster column is called in the subset
+head(Idents(tb_subset))
+
+# Idents(tb_subset) <- tb_subset$updated_clusters
+# Transfer new labels back to the full object
+
+# Convert to character first
+placenta_seurat$cell_type_v4 <- as.character(placenta_seurat$cell_type_v4)
+
+# Now the assignment will work
+placenta_seurat$cell_type_v4[colnames(tb_subset)] <- as.character(Idents(tb_subset))
+
+# Optional: convert back to factor if needed
+placenta_seurat$cell_type_v4 <- as.factor(placenta_seurat$cell_type_v4)
+
+# Verify the transfer worked
+table(placenta_seurat$cell_type_v4)
+
+# Check no cells were lost or duplicated
+length(colnames(tb_subset)) == sum(colnames(placenta_seurat) %in% colnames(tb_subset))
+
+# Visualize on the main UMAP to confirm
+Idents(placenta_seurat) <- "cell_type_v4"
+
+DimPlot_scCustom(placenta_seurat, reduction = "umap", label = TRUE, repel = TRUE, label.box = TRUE, aspect_ratio = 0.75, group.by = "cell_type_v4")
+ggsave("umap_v12.pdf", width = 15, height = 10, units = "in", dpi = 300)
+```
+```{r}
+Fig_4D <- DotPlot_scCustom(placenta_seurat,
+                          features = c("TFAP2C", "GATA3", "ITGA6", "EPCAM",  "CDH1", 
+                                       "SPINT1", "TP63", "PEG3", "KRT5", "KRT7", 
+                                       "TFAP2A", "SLC2A1", "IGF2", "KRT19", "SLC1A5", 
+                                       "GCM1", "YAP1", "PAGE4", "CDH5", "CYP19A1", 
+                                       "CGA", "CGB2", "CGB1–8", "CSH1", "GH2", 
+                                       "PSGs", "SLC38A", "CK6C", "KLF4", "KRT17", 
+                                       "PEG10", "CD56", "CD31", "CD146", "KRT8", 
+                                       "KRT18", "EpCAM","PCAM1", "CSH2", "CYP11A1", 
+                                       "CRH",  "PAPPA", 'PAX8', 'HNF1B', 'PAEP', 'EHF', 'GRHL2', 'DPP4', "AGR2",
+                                       "LEPR", "CLDN3", "CLDN4", "SCGB1A1", 'RXFP1', 'MUC1', 'MUC16', 'GLYCAM1', 'GPX3'
+                                       ), 
+                          group.by = "cell_type_v4",
+                          remove_axis_titles = FALSE,  
+                          flip_axes = TRUE, 
+                          x_lab_rotate = TRUE, 
+                          colors_use = gradient) + 
+  labs(x = "Gene", y = "Cluster")
+
+Fig_4D_filtered <- Fig_4D + 
+  scale_y_discrete(limits = c("schCTB", "CTB1", "CTB2", "CTB3", "STB", "unknown_tb")) +
+  guides(size = guide_legend(title = "Percent expressed", order = 2),
+         color = guide_colorbar(title = "Avg. Expression (scaled)", order = 1))
+
+Fig_4D_filtered
+
+ggsave("4d_dot_tb.pdf", width = 8, height = 10)
+```
+```{r}
+markers <- FindMarkers(
+  object = placenta_seurat,
+  ident.1 = "unknown_tb",   # Your cluster of interest
+  min.pct = 0.25,             # Min fraction of cells expressing the gene
+  logfc.threshold = 0.25      # Min log fold-change threshold
+)
+
+top_markers_unk <- markers %>%
+  tibble::rownames_to_column("gene") %>%
+  filter(p_val_adj < 0.05) %>%
+  arrange(desc(avg_log2FC)) %>%
+  slice_head(n = 50) %>%
+  pull(gene)
+
+markers <- rownames_to_column(markers, var = "gene")
+write_csv(markers, file = "unknown_tb_markers.csv")
+```
+```{r}
+FeaturePlot_scCustom(placenta_seurat, features = "LEPR", reduction = "umap")
+```
+```{r}
+placenta_seurat <- RenameIdents(placenta_seurat, "CD4 T" = "Treg", "NK" = "pNK", "7" = "M0", "0" = "M2", "6" = "0", "11" = "MKI67+MAC",
+                                "unknown" = "B", "unknown_tb" = "GE", "Plasma" = "PB")
+```
+```{r}
+levels(placenta_seurat)
+placenta_seurat$cell_type_v5 <- Idents(placenta_seurat)
+
+DimPlot_scCustom(placenta_seurat, reduction = "umap", label = TRUE, repel = TRUE, label.box = TRUE, aspect_ratio = 0.75, group.by = "cell_type_v5")
+ggsave("umap_v13.pdf", width = 15, height = 10, units = "in", dpi = 300)
+```
+```{r}
+saveRDS(placenta_seurat, file = "placenta_mapped_v5.RDS")
+DimPlot_scCustom(mac_subset, reduction = "umap", label = TRUE, repel = TRUE, label.box = TRUE, aspect_ratio = 0.75)
+mac_subset <- RenameIdents(mac_subset, "7" = "M0", "0" = "M2", "6" = "0", "11" = "MKI67+MAC")
+mac_subset$cell_type_v5 <- Idents(mac_subset)
+saveRDS(mac_subset, file = "mac_subset_v3.RDS")
+
+DimPlot_scCustom(t_subset, reduction = "umap", label = TRUE, repel = TRUE, label.box = TRUE, aspect_ratio = 0.75)
+t_subset <- RenameIdents(t_subset, "unknown" = "B", "CD4 T" = "Treg", "NK" = "pNK")
+t_subset$cell_type_v5 <- Idents(t_subset)
+saveRDS(t_subset, file = "t_subset_v3.RDS")
+
+DimPlot_scCustom(tb_subset, reduction = "umap", label = TRUE, repel = TRUE, label.box = TRUE, aspect_ratio = 0.75)
+tb_subset <- RenameIdents(tb_subset, "unknown_tb" = "GE")
+tb_subset$cell_type_v5 <- Idents(tb_subset)
+saveRDS(tb_subset, file = "tb_subset_v3.RDS")
 ```
 
