@@ -23,6 +23,7 @@ This repository contains the code and instructions to reproduce the results from
 | `placenta_v3_organized.R` | R | QC, integration, annotation, compositional analysis, figures |
 | `run_scvelo_full.py` | Python | RNA velocity: full atlas (stochastic model) |
 | `run_scvelo_v2.py` | Python | RNA velocity: cell type subsets (dynamical model, stochastic fallback) |
+| `placenta.Rmd` | R | Dot plots, cross-species comparison |
 
 ---
 
@@ -45,6 +46,10 @@ This repository contains the code and instructions to reproduce the results from
 4. **Velocity**: Full atlas uses stochastic model. Subsets (`run_scvelo_v2.py`) use dynamical model (`recover_dynamics`) with stochastic fallback if >90% NaN velocity values
 5. **Outputs**: Stream plots (SVG), arrow plots (PDF), confidence/pseudotime/latent time scatter plots; top velocity genes per cell type (`rank_velocity_genes`, min_corr = 0.3)
 
+**`placenta.Rmd`**
+
+1. **Figure generation**: lineage dot plots
+2. **Cross-species comparison**: Seurat anchor-based label transfer for one-to-one gene matches between human and macaque placental atlases
 ---
 
 ## Inputs
@@ -54,6 +59,7 @@ This repository contains the code and instructions to reproduce the results from
 | `cell_ranger_outs/<sample>/outs/` | CellRanger output (raw + filtered matrices) |
 | `velocyto_out/*.loom` | Spliced/unspliced counts |
 | `full_placenta_metadata.csv` | Seurat metadata + UMAP coords (full atlas) |
+| `sc.NormByLocationRep.Harmony.final.rds` | Human placenta atlas |
 
 ## Outputs
 
@@ -68,6 +74,6 @@ This repository contains the code and instructions to reproduce the results from
 
 ## Dependencies
 
-**R:** `Seurat` (v5.1.0), `harmony` (v1.2.0), `DropletUtils`, `SoupX`, `scDblFinder`, `sccomp`, `scCustomize`, `SeuratExtend`, `dittoSeq`, `ggplot2`, `ggrepel`, `shadowtext`, `patchwork`, `plotly`, `shiny`, `FNN`, `tidyverse`, `future`
+**R:** `Seurat` (v5.1.0), `harmony` (v1.2.0), `DropletUtils`, `SoupX`, `scDblFinder`, `sccomp`, `scCustomize`, `SeuratExtend`, `dittoSeq`, `ggplot2`, `ggrepel`, `shadowtext`, `patchwork`, `plotly`, `shiny`, `FNN`, `tidyverse`, `future`, `biomaRt`, `AnnotationHub`, `org.Hs.eg.db`
 
 **Python:** `scvelo`, `scanpy`, `pandas`, `numpy`, `matplotlib`, `scipy`
