@@ -1,0 +1,533 @@
+---
+title: "Placenta_Dotplot"
+output: pdf_document
+date: "2026-04-03"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r library}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(patchwork)
+library(Seurat)
+library(scCustomize)
+library(pheatmap)
+```
+
+```{r basic-setting}
+setwd("/gscratch/kawaldorflab/tykim/R_files/placenta_atlas")
+set.seed(42)
+
+gradient <- c("blue", "white", "red")
+
+placenta_mapped <- readRDS("/mmfs1/gscratch/kawaldorflab/jcorn427/final_outputs/placenta_atlas/placenta_seurat_FINAL_v4.RDS")
+```
+
+
+```{r Trophoblast}
+# Fig 4D 
+# Trophoblast
+Fig_4D <- DotPlot_scCustom(placenta_mapped,
+                          features = c("MKI67", "TFAP2C", "GATA3", "ITGA6", "EPCAM",  "CDH1", 
+                                       "SPINT1", "TP63", "PEG3", "KRT5", "KRT7", 
+                                       "TFAP2A", "SLC2A1", "IGF2", "KRT19", "SLC1A5", 
+                                       "GCM1", "YAP1", "PAGE4", "CDH5", "CYP19A1", 
+                                       "CGA", "CGB2", "CGB1–8", "CSH1", "GH2", 
+                                       "PSGs", "SLC38A", "CK6C", "KLF4", "KRT17", 
+                                       "PEG10", "CD56", "CD31", "CD146", "KRT8", 
+                                       "KRT18", "EpCAM","PCAM1", "CSH2", "CYP11A1", 
+                                       "CRH",  "PAPPA"
+                                       ), 
+                          group.by = "cell_type_v5",
+                          remove_axis_titles = FALSE,  
+                          flip_axes = TRUE, 
+                          x_lab_rotate = TRUE, 
+                          colors_use = gradient) + 
+  labs(x = "Gene", y = "Cluster")
+
+Fig_4D_filtered <- Fig_4D + 
+  scale_y_discrete(limits = c("schCTB", "CTB1", "CTB2", "CTB3", "STB")) +
+  guides(size = guide_legend(title = "Percent expressed", order = 2),
+         color = guide_colorbar(title = "Avg. Expression (scaled)", order = 1))
+
+Fig_4D_filtered
+
+ggsave("4d_dot_tb.pdf", width = 8, height = 10)
+```
+
+```{r Macrophage}
+# 5D
+# Macrophage
+# Between DDX3Y & MKI67, keep the one has higher FMAC and HB
+Fig_5D <- DotPlot_scCustom(placenta_mapped, 
+                           features = c("S100A8", "S100A9", "VCAN", "LST1", "SELL", 
+                                        "CCR2", "THBS1", "IL1B", "CD62L",
+                                        "MAMU-DRB1", "CD86", "IL10", "CD209",
+                                        "FOLR2", "FCGR1A", "HMOX1", "CCL2", 
+                                        "CLEC7A", "MRC1", "CD163", "CD68", "CD14", 
+                                        "CSF1R", "C1QB", "CCL17", "ADAMDEC1", "MKI67", "LYVE1","SPP1", "DDX3Y", "RPS4Y1"
+                                        ), 
+                           group.by = "cell_type_v5",
+                           remove_axis_titles = FALSE,  
+                           flip_axes = TRUE, 
+                           x_lab_rotate = TRUE, 
+                           colors_use = gradient) + 
+  labs(x = "Gene", y = "Cluster")
+
+Fig_5D_filtered <- Fig_5D + 
+  scale_y_discrete(limits = c("NEUT", "Mono", "PAMM", "M0", "M1", "M2", "M2a", "ADAMDEC1+MAC", "MKI67+MAC", "LYVE1+MAC", "SPP1+MAC", "FMAC", "HB")) +
+  guides(size = guide_legend(title = "Percent expressed", order = 2),
+         color = guide_colorbar(title = "Avg. Expression (scaled)", order = 1))
+
+Fig_5D_filtered
+
+ggsave("5d_dot_mac.pdf", width = 8, height = 10)
+```
+
+```{r uNK}
+# 6D
+# uNK + T + B
+# ENSMMUG00000013289 = LILRB1
+# ENSMMUG00000063583 = GNLY
+Fig_6D <- DotPlot_scCustom(placenta_mapped, 
+                           features = c("CD3D", "CD4", "ENSMMUG0000003532", "CD8A",
+                                        "FCGR3", "CCL5", "ITGA4", 
+                                        "CD38", "CD7", "NCAM1", "ITGAM", "ITGA1", "ENTPD1",
+                                        "ENSMMUG00000013289", "KLRB1", "KLRD1", "PRF1", "ENSMMUG00000063583", "GZMA", 
+                                        "GZMB", "NKG7", "CTSW","GZMK", "GZMM", "XCL1", 
+                                        "ITGAE", "BICDL1", "STAT4", "NKG2D", "CD57", 
+                                        "CSFR2", "EOMES", "CD39", "CD73", "ADORA3", 
+                                        "TRAC", "ICOS", "CD69", "ITK", 
+                                        "THEMIS", "GRAP2", "CD28", "CD6", "BCL11B", 
+                                        "IL7R", "PDCD1", "IFNG",  "FOXP3", 
+                                        "IL2RA", "NKG2A", "CD94", 
+                                         "TIGIT",  "IGHM", "CLEC17A",
+                                        "AFF3", "BACH2", "BANK1", "BLK", "EBF1",
+                                        "PAX5", "CD79A", "CD19", "MS4A1", "ZBTB38",
+                                        "MZB1", "TNFRSF17", "ENSMMUG00000002764", "ENSMMUG00000040771", "ENSMMUG00000044861",
+                                        "ENSMMUG00000059850", "JCHAIN", "ENSMMUG00000015202"
+                                        ), 
+                           group.by = "cell_type_v5",
+                           remove_axis_titles = FALSE,  
+                           flip_axes = TRUE, 
+                           x_lab_rotate = TRUE, 
+                           colors_use = gradient) + 
+  labs(x = "Gene", y = "Cluster")
+
+Fig_6D_filtered <- Fig_6D + 
+  scale_y_discrete(limits = c("ImmP", "pNK", "uNK1", "uNK2", "uNK3", "CD8+TRM", "TRM", "Treg", "B", "PB")) +
+  guides(size = guide_legend(title = "Percent expressed", order = 2),
+         color = guide_colorbar(title = "Avg. Expression (scaled)", order = 1))
+
+Fig_6D_filtered
+
+ggsave("dot_nk_t_b.pdf", width = 10, height = 16)
+```
+
+```{r T-B-cell}
+# 7D 
+# T cell + B cell
+# ENSMMUG00000003532 = CD8B
+Fig_7D <- DotPlot_scCustom(placenta_mapped, 
+                           features = c("CD3D", "CD4", "ENSMMUG00000003532", "CD8A", "FCGR3", 
+                                        "NCAM1", "TRAC", "ICOS", "CD69", "ITK", 
+                                        "THEMIS", "GRAP2", "CD28", "CD6", "BCL11B", 
+                                        "ITGAE", "IL7R", "PDCD1", "IFNG",  "FOXP3", 
+                                        "IL2RA", "ITGA1", "NKG2A", "CD94", "KLRB1", 
+                                        "NKG7", "NKG2D", "PRF1", "GZMA", "GZMB",
+                                        "GZMK",  "GZMM", "TIGIT", "CCL5", "ITGA4", 
+                                        "CD38", "CD7", "KLRD1", "ZBTB38", "ZBTB16",
+                                        "MZB1", "TNFRSF17", "ENSMMUG00000002764", "ENSMMUG00000040771", "ENSMMUG00000044861",
+                                        "ENSMMUG00000059850", "JCHAIN", "ENSMMUG00000015202", "IGHM", "CLEC17A",
+                                        "AFF3", "BACH2", "BANK1", "BLK", "EBF1",
+                                        "PAX5", "CD79A", "CD19", "MS4A1"
+                                        ), 
+                           group.by = "cell_type_v5",
+                           remove_axis_titles = FALSE,  
+                           flip_axes = TRUE, 
+                           x_lab_rotate = TRUE, 
+                           colors_use = gradient) + 
+  labs(x = "Gene", y = "Cluster")  
+
+Fig_7D_filtered <- Fig_7D + 
+  scale_y_discrete(limits = c("TRM", "CD8 TRM", "Treg", "B", "PB")) +
+  guides(size = guide_legend(title = "Percent expressed", order = 2),
+         color = guide_colorbar(title = "Avg. Expression (scaled)", order = 1))
+
+Fig_7D_filtered
+
+ggsave("7d_dot_t.pdf", width = 8, height = 10)
+```
+
+```{r DSC}
+# 8D
+# DSC
+Fig_8D <- DotPlot_scCustom(placenta_mapped, 
+                           features = c("CCND1", "PDGFRA", "PDGFRB", "HOXA11", "POSTN", 
+                                        "TIMP3", "IGFBP1", "RGCC", "CXCL12", "APOD", 
+                                        "PGR", "HAND2", "WT1", "FOXO1", "COL4A5", 
+                                        "DKK1", "PRL", 'WNT5A'
+                                        ), 
+                           group.by = "cell_type_v5",
+                           remove_axis_titles = FALSE,  
+                           flip_axes = TRUE, 
+                           x_lab_rotate = TRUE, 
+                           colors_use = gradient) + 
+  labs(x = "Gene", y = "Cluster")
+
+Fig_8D_filtered <- Fig_8D + 
+  scale_y_discrete(limits = c("ESC", "DSC1", "DSC2")) +
+  guides(size = guide_legend(title = "Percent expressed", order = 2),
+         color = guide_colorbar(title = "Avg. Expression (scaled)", order = 1))
+ 
+Fig_8D_filtered
+
+ggsave("8d_dot_dsc.pdf", width = 8, height = 10)
+```
+
+```{r Misc}
+# 9 
+# Misc
+Fig_9 <- DotPlot_scCustom(placenta_mapped, 
+                          features = c("CDH1", "EPCAM", "CLDN4", "KRT19", "AGR2", "AGR3", "KRT24", "KRT16", "MSLN", "LAMB3", 
+                                       "VTCN1", "LGALSL", "OVOL2", "COL6A2", "COL3A1", "COL1A1", "PAX8", "HNF1B", "PAEP", "SCGB1A1", "EHF", "RXFP1", 
+                                       "ITGB3", "DPP4", "MAL", "MAL3",
+                                       "PDGFRB", "MCAM", "MYH11", "ACTA2", "THY1",  
+                                        "DCN", "LUM", "VIM", "FN1", "DKK1", "IGFBP1", "POSTN",
+                                       "HBA", "HBE1", "ALAS2","PECAM1",
+                                       "VWF", "CDH5", "TEK", "KDR"
+                                       
+                                       
+                                       ), 
+                          group.by = "cell_type_v5",
+                          remove_axis_titles = FALSE,  
+                          flip_axes = TRUE, 
+                          x_lab_rotate = TRUE, 
+                          colors_use = gradient) + 
+  labs(x = "Gene", y = "Cluster")
+
+Fig_9_filtered <- Fig_9 + 
+  scale_y_discrete(limits = c("AEC",  "GE", "PC", "FIB1", "FIB2", "EB", "EC")) +
+  guides(size = guide_legend(title = "Percent expressed", order = 2),
+         color = guide_colorbar(title = "Avg. Expression (scaled)", order = 1))
+
+Fig_9_filtered
+
+ggsave("9_dot_misc.pdf", width = 8, height = 10)
+```
+
+```{r Cross-Ref}
+ref <- readRDS("/gscratch/kawaldorflab/Globus/nardhy/third_tri_scRNA-Seq/sc.NormByLocationRep.Harmony.final.rds")
+```
+
+```{r}
+# TNL = Not in Labor
+# TIL = Term In Labor
+table(ref@meta.data$Labor)
+table(ref@meta.data$GA)
+```
+
+```{r}
+ref_nil <- subset(ref, subset = Labor == "TNL")
+ncol(ref_nil)
+table(ref_nil@meta.data$Labor)
+```
+```{r}
+table(ref_nil@meta.data$Location)
+```
+
+```{r}
+table(ref_nil@meta.data$cluster_name)
+```
+
+```{r}
+table(placenta_mapped@meta.data$cell_type_v5)
+```
+
+```{r}
+macaque_genes <- rownames(placenta_mapped)
+human_genes   <- rownames(ref_nil)
+
+shared_genes  <- intersect(macaque_genes, human_genes)
+cat("Shared genes:", length(shared_genes), "\n")
+cat("Macaque total:", length(macaque_genes), "\n")
+cat("Human total:",  length(human_genes), "\n")
+```
+
+```{r}
+head(rownames(placenta_mapped), 20)
+head(rownames(ref_nil), 20)
+```
+
+```{r}
+rownames(ref_nil) <- gsub("\\..*", "", rownames(ref_nil))
+head(rownames(ref_nil), 5)
+
+shared_test <- intersect(rownames(placenta_mapped), rownames(ref_nil))
+cat("Shared after stripping versions:", length(shared_test), "\n")
+```
+
+```{r}
+# library(biomaRt)
+
+# Connect to macaque and human ensembl
+macaque_mart <- useMart("ensembl", dataset = "mmulatta_gene_ensembl", 
+                         host = "https://asia.ensembl.org")
+human_mart   <- useMart("ensembl", dataset = "hsapiens_gene_ensembl", 
+                         host = "https://asia.ensembl.org")
+
+orthologs <- getLDS(
+  attributes  = c("ensembl_gene_id"),
+  mart        = macaque_mart,
+  attributesL = c("ensembl_gene_id"),
+  martL       = human_mart,
+  uniqueRows  = TRUE
+)
+
+colnames(orthologs) <- c("macaque_ensembl", "human_ensembl")
+head(orthologs)
+nrow(orthologs)
+```
+
+```{r}
+library(AnnotationHub)
+
+ah <- AnnotationHub()
+query(ah, c("Macaca mulatta", "OrgDb"))
+```
+
+```{r}
+orgdb_mac <- ah[["AH116714"]]
+
+mac_map <- AnnotationDbi::select(orgdb_mac,
+  keys     = rownames(placenta_mapped),
+  columns  = c("ENSEMBL", "SYMBOL"),
+  keytype  = "ENSEMBL"
+)
+
+head(mac_map)
+nrow(mac_map)
+sum(!is.na(mac_map$SYMBOL))
+```
+
+```{r}
+mac_rows <- rownames(placenta_mapped)
+n_ensembl <- sum(grepl("^ENSMMUG", mac_rows))
+n_symbols <- sum(!grepl("^ENSMMUG", mac_rows))
+
+cat("ENSMMUG IDs:", n_ensembl, "\n")
+cat("Gene symbols:", n_symbols, "\n")
+```
+
+```{r}
+
+head(ref_nil[["RNA"]]@meta.features, 20)  # Seurat v4
+```
+
+```{r}
+# Create a clean version of human gene names (strip .version suffix)
+human_ensg_clean <- gsub("\\..*", "", rownames(ref_nil))
+
+# Now map ENSMMUG -> ENSG using the OrgDb we already have
+# Also get human gene symbols from the macaque gene symbols directly
+# Strategy: use the 16,197 macaque gene symbols to find matching human ENSG IDs
+
+library(org.Hs.eg.db)  # if not installed: BiocManager::install("org.Hs.eg.db")
+
+human_sym_to_ensg <- AnnotationDbi::select(org.Hs.eg.db,
+  keys    = rownames(placenta_mapped)[!grepl("^ENSMMUG", rownames(placenta_mapped))],
+  columns = c("SYMBOL", "ENSEMBL"),
+  keytype = "SYMBOL"
+)
+
+head(human_sym_to_ensg)
+nrow(human_sym_to_ensg)
+sum(!is.na(human_sym_to_ensg$ENSEMBL))
+```
+
+```{r}
+# Match against clean human ENSG IDs (version stripped)
+shared <- inner_join(
+  human_sym_to_ensg %>% filter(!is.na(ENSEMBL)),
+  data.frame(ENSEMBL = human_ensg_clean, 
+             human_row = rownames(ref_nil)),
+  by = "ENSEMBL"
+)
+
+cat("Shared genes:", nrow(shared), "\n")
+head(shared)
+```
+
+```{r}
+cat("Duplicate macaque symbols:", sum(duplicated(shared$SYMBOL)), "\n")
+cat("Duplicate human rows:", sum(duplicated(shared$human_row)), "\n")
+```
+
+```{r}
+shared_clean <- shared %>%
+  filter(!duplicated(SYMBOL) & !duplicated(human_row))
+
+cat("Shared genes after dedup:", nrow(shared_clean), "\n")
+```
+
+```{r}
+# Subset macaque using gene symbols
+mac_sub <- placenta_mapped[shared_clean$SYMBOL, ]
+
+# Subset human using versioned rownames
+ref_sub <- ref_nil[shared_clean$human_row, ]
+
+# Rename human rownames to gene symbols so both match
+rownames(ref_sub@assays$RNA) <- shared_clean$SYMBOL
+
+cat("Macaque dims:", dim(mac_sub), "\n")
+cat("Human dims:", dim(ref_sub), "\n")
+```
+
+```{r}
+# Extract count matrices
+mac_counts <- GetAssayData(mac_sub, assay = "RNA", layer = "counts")
+ref_counts <- GetAssayData(ref_sub, assay = "RNA", layer = "counts")
+
+# Rename human rows to gene symbols
+rownames(ref_counts) <- shared_clean$SYMBOL
+
+# Verify
+cat("Macaque rownames match:", all(rownames(mac_counts) == shared_clean$SYMBOL), "\n")
+cat("Human rownames match:", all(rownames(ref_counts) == shared_clean$SYMBOL), "\n")
+head(rownames(ref_counts))
+```
+
+```{r}
+# Rebuild Seurat objects with correct gene names
+mac_new <- CreateSeuratObject(
+  counts    = mac_counts,
+  meta.data = mac_sub@meta.data
+)
+
+```
+
+```{r}
+ref_new <- CreateSeuratObject(
+  counts    = ref_counts,
+  meta.data = ref_sub@meta.data
+)
+```
+
+```{r}
+cat("Macaque:", dim(mac_new), "\n")
+cat("Human:", dim(ref_new), "\n")
+
+# Verify gene names match
+cat("Rownames match:", all(rownames(mac_new) == rownames(ref_new)), "\n")
+```
+
+```{r}
+# Normalize both
+ref_new <- NormalizeData(ref_new)
+ref_new <- FindVariableFeatures(ref_new, nfeatures = 3000)
+ref_new <- ScaleData(ref_new)
+ref_new <- RunPCA(ref_new, npcs = 30)
+
+mac_new <- NormalizeData(mac_new)
+
+# Find transfer anchors
+anchors <- FindTransferAnchors(
+  reference           = ref_new,
+  query               = mac_new,
+  dims                = 1:30,
+  reference.reduction = "pca"
+)
+```
+
+```{r}
+predictions <- TransferData(
+  anchorset = anchors,
+  refdata   = ref_new$cluster_name,
+  dims      = 1:30
+)
+
+mac_new <- AddMetaData(mac_new, metadata = predictions)
+
+# Quick check
+head(mac_new$predicted.id)
+table(mac_new$predicted.id)
+```
+
+```{r}
+mac_new <- readRDS("/mmfs1/gscratch/kawaldorflab/tykim/R_files/placenta_atlas/placenta_mapped_labeled.RDS")
+```
+
+```{r}
+pred_table <- table(
+  Macaque = mac_new$cell_type_v5,
+  Human   = mac_new$predicted.id
+)
+pred_prop <- prop.table(pred_table, margin = 1)
+```
+
+
+```{r}
+output_dir <- "/mmfs1/gscratch/kawaldorflab/tykim/R_files/placenta_atlas/cross_species"
+dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+
+pdf(file.path(output_dir, "placenta_crossspecies_heatmap.pdf"), width = 15, height = 15)
+pheatmap(pred_prop,
+  color           = colorRampPalette(c("white", "navy"))(50),
+  cluster_rows    = TRUE,
+  cluster_cols    = TRUE,
+  fontsize        = 10,
+  angle_col       = 45,
+  main            = "Macaque Placenta vs. Human Term Not-In-Labor Placenta"
+)
+dev.off()
+
+```
+
+```{r}
+pdf(file.path(output_dir, "placenta_crossspecies_heatmap_with_values.pdf"), width = 15, height = 15)
+pheatmap(pred_prop,
+  color           = colorRampPalette(c("white", "navy"))(50),
+  cluster_rows    = TRUE,
+  cluster_cols    = TRUE,
+  fontsize        = 10,
+  angle_col       = 45,
+  display_numbers = TRUE,
+  number_format   = "%.2f",
+  fontsize_number = 7,
+  main            = "Macaque Placenta vs. Human Term Not-In-Labor Placenta"
+)
+dev.off()
+```
+
+```{r}
+write.csv(as.data.frame.matrix(pred_prop),
+  file.path(output_dir, "placenta_crossspecies_proportions.csv"))
+```
+
+
+
+
+
+
+
+```{r}
+length(unique(ref_nil@meta.data$Pregnancy_ID))
+length(unique(ref_nil@meta.data$New_ID))
+```
+
+```{r}
+table(ref_nil@meta.data$Pregnancy_ID)
+table(ref_nil@meta.data$Old_Sample_ID)
+```
+```{r}
+ref_til <- subset(ref, subset = Labor == "TIL")
+length(unique(ref_til@meta.data$Pregnancy_ID))
+table(ref_til@meta.data$Pregnancy_ID)
+```
+
+
