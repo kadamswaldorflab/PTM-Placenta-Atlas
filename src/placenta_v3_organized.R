@@ -452,53 +452,7 @@ print(qc_table)
 write.csv(qc_table, "qc_metrics_table.csv", row.names = FALSE)
 
 # -----------------------------------------------------------------------------
-# 8. LABEL TRANSFER FROM REFERENCE ATLAS
-# -----------------------------------------------------------------------------
-
-atlas <- readRDS("/mmfs1/gscratch/kawaldorflab/jcorn427/placenta/placenta_v2/placenta_seurat_v7.RDS")
-print(paste("Atlas has", ncol(atlas), "cells"))
-print(paste("Cell types:", length(unique(atlas$cell_type_v3)), "unique types"))
-table(atlas$cell_type_v3)
-
-atlas <- SCTransform(atlas, vst.flavor = "v2", verbose = TRUE)
-length(slot(atlas[["SCT"]], "SCTModel.list"))
-
-transfer_anchors <- FindTransferAnchors(
-  reference            = atlas,
-  query                = placenta_merged_filt,
-  normalization.method = "SCT",
-  reference.reduction  = "pca",
-  dims                 = 1:30
-)
-predictions <- TransferData(anchorset = transfer_anchors, refdata = atlas$cell_type_v3, dims = 1:30)
-placenta_merged_filt <- AddMetaData(placenta_merged_filt, metadata = predictions)
-placenta_merged_filt$predicted.celltype <- placenta_merged_filt$predicted.id
-
-head(placenta_merged_filt@meta.data[, c("predicted.celltype")])
-table(placenta_merged_filt$predicted.celltype)
-
-DimPlot_scCustom(placenta_merged_filt, reduction = "umap", group.by = "predicted.celltype",
-                 label = TRUE, repel = TRUE, label.box = TRUE) +
-  ggtitle("Transferred Cell Types - After Harmony")
-ggsave("umap_post_harmony_xfer.pdf", width = 15, height = 10)
-
-VlnPlot(placenta_merged_filt, features = "predicted.celltype.score",
-        group.by = "predicted.celltype", pt.size = 0) +
-  ggtitle("Prediction Confidence by Cell Type")
-ggsave("pred_conf_cell_type.pdf", width = 15, height = 5)
-
-p1 <- DimPlot_scCustom(placenta_merged_filt, reduction = "umap", group.by = "predicted.celltype",
-                        label = TRUE, repel = TRUE, label.box = TRUE) +
-  ggtitle("Transferred Cell Types - After Harmony")
-p2 <- DimPlot_scCustom(placenta_merged_filt, reduction = "umap", group.by = "seurat_clusters",
-                        label = TRUE, repel = TRUE, label.box = TRUE)
-p1 | p2
-ggsave("umaps_post_harmony_and_xfer.pdf", width = 25, height = 10)
-
-saveRDS(placenta_merged_filt, file = "placenta_seurat_v1.RDS")
-
-# -----------------------------------------------------------------------------
-# 9. MACROPHAGE SUBSET ANNOTATION
+# 10. MACROPHAGE SUBSET ANNOTATION
 # -----------------------------------------------------------------------------
 
 macro_features <- c("CEACAM8", "SELL", "CSF3R", "CD177", "OLFM4", "CLEC7A", "ADAMDEC1", "IL12B", "THBS1", "MAMU-DRB1",
@@ -721,7 +675,7 @@ saveRDS(mac_subset, file = "mac_subset_v3.RDS")
 saveRDS(placenta_seurat, file = "placenta_mapped_v4.RDS")
 
 # -----------------------------------------------------------------------------
-# 10. T / NK / B CELL SUBSET ANNOTATION
+# 11. T / NK / B CELL SUBSET ANNOTATION
 # -----------------------------------------------------------------------------
 
 t_features <- c("CD3D", "CD4", "ENSMMUG00000003532", "CD8A", "FCGR3",
@@ -801,7 +755,7 @@ DimPlot_scCustom(placenta_seurat, reduction = "umap", label = TRUE, repel = TRUE
 ggsave("umap_v11.pdf", width = 15, height = 10, units = "in", dpi = 300)
 
 # -----------------------------------------------------------------------------
-# 11. TROPHOBLAST SUBSET ANNOTATION
+# 12. TROPHOBLAST SUBSET ANNOTATION
 # -----------------------------------------------------------------------------
 
 DimPlot_scCustom(tb_subset, reduction = "umap", label = TRUE, repel = TRUE,
@@ -902,7 +856,7 @@ p1 <- DimPlot_scCustom(tb_subset, reduction = "umap", label = TRUE, group.by = "
 ggsave("tb_umap_2.pdf", plot = p1, width = 15, height = 10, units = "in", dpi = 300)
 
 # -----------------------------------------------------------------------------
-# 12. IMMUNE SUBSET RE-CLUSTERING (NK / T / B)
+# 13. IMMUNE SUBSET RE-CLUSTERING (NK / T / B)
 # -----------------------------------------------------------------------------
 
 imm_features <- c("CD3D", "CD4", "ENSMMUG0000003532", "CD8A",
@@ -1095,7 +1049,7 @@ DimPlot_scCustom(placenta_seurat, reduction = "umap", label = TRUE, repel = TRUE
 ggsave("umap_v15.pdf", width = 15, height = 10, units = "in", dpi = 300)
 
 # -----------------------------------------------------------------------------
-# 13. FINAL RENAMING & LABEL PROPAGATION
+# 14. FINAL RENAMING & LABEL PROPAGATION
 # -----------------------------------------------------------------------------
 
 placenta_seurat <- RenameIdents(placenta_seurat, "LYVE+MAC" = "LYVE1+MAC")
@@ -1137,7 +1091,7 @@ placenta_seurat <- RenameIdents(placenta_seurat,
 placenta_seurat$fet_sex <- Idents(placenta_seurat)
 
 # -----------------------------------------------------------------------------
-# 14. TROPHOBLAST FINAL RE-CLUSTERING & CLEANUP
+# 15. TROPHOBLAST FINAL RE-CLUSTERING & CLEANUP
 # -----------------------------------------------------------------------------
 
 # Lasso gate additional unknown trophoblasts
@@ -1386,7 +1340,7 @@ write.csv(combined, "full_placenta_metadata.csv", row.names = FALSE)
 cat("Saved metadata for full dataset with", nrow(combined), "cells\n")
 
 # -----------------------------------------------------------------------------
-# 15. TREATMENT & SAMPLE METADATA
+# 16. TREATMENT & SAMPLE METADATA
 # -----------------------------------------------------------------------------
 
 treatment_df <- data.frame(
@@ -1405,7 +1359,7 @@ placenta_seurat$treatment  <- meta$treatment
 table(placenta_seurat$treatment, placenta_seurat$animal_id)
 
 # -----------------------------------------------------------------------------
-# 16. PAPER FIGURES
+# 17. PAPER FIGURES
 # -----------------------------------------------------------------------------
 
 Idents(placenta_seurat) <- "cell_type_v5"
@@ -1602,7 +1556,7 @@ Fig_9_filtered
 ggsave("9_dot_misc.pdf", width = 8, height = 10)
 
 # -----------------------------------------------------------------------------
-# 17. COMPOSITIONAL ANALYSIS (scComp)
+# 18. COMPOSITIONAL ANALYSIS (scComp)
 # -----------------------------------------------------------------------------
 
 # Treatment: Media vs Saline
