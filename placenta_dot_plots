@@ -1,0 +1,199 @@
+---
+title: "Placenta_Dotplot"
+output: pdf_document
+date: "2026-04-03"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r library}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(patchwork)
+library(Seurat)
+library(scCustomize)
+```
+
+```{r basic-setting}
+setwd("/gscratch/kawaldorflab/tykim/R_files/placenta_atlas")
+set.seed(42)
+
+gradient <- c("blue", "white", "red")
+
+placenta_mapped <- readRDS("/mmfs1/gscratch/kawaldorflab/jcorn427/placenta/placenta_v3/placenta_mapped_v4.RDS")
+```
+
+
+```{r Trophoblast}
+# Fig 4D 
+# Trophoblast
+Fig_4D <- DotPlot_scCustom(placenta_mapped,
+                          features = c("TFAP2C", "GATA3", "ITGA6", "EPCAM",  "CDH1", 
+                                       "SPINT1", "TP63", "PEG3", "KRT5", "KRT7", 
+                                       "TFAP2A", "SLC2A1", "IGF2", "KRT19", "SLC1A5", 
+                                       "GCM1", "YAP1", "PAGE4", "CDH5", "CYP19A1", 
+                                       "CGA", "CGB2", "CGB1–8", "CSH1", "GH2", 
+                                       "PSGs", "SLC38A", "CK6C", "KLF4", "KRT17", 
+                                       "PEG10", "CD56", "CD31", "CD146", "KRT8", 
+                                       "KRT18", "EpCAM","PCAM1", "CSH2", "CYP11A1", 
+                                       "CRH",  "PAPPA"
+                          ), 
+                          group.by = "cell_type_v3",
+                          remove_axis_titles = FALSE,  
+                          flip_axes = TRUE, 
+                          x_lab_rotate = TRUE, 
+                          colors_use = gradient) + 
+  labs(x = "Gene", y = "Cluster")
+
+Fig_4D_filtered <- Fig_4D + 
+  scale_y_discrete(limits = c("schCTB", "CTB1", "CTB2", "CTB3", "STB")) +
+  guides(size = guide_legend(title = "Percent expressed", order = 2),
+         color = guide_colorbar(title = "Avg. Expression (scaled)", order = 1))
+
+Fig_4D_filtered
+
+ggsave("4d_dot_tb.pdf", width = 15, height = 10)
+```
+
+```{r Macrophage}
+# 5D
+# Macrophage
+Fig_5D <- DotPlot_scCustom(placenta_mapped, 
+                           features = c("S100A8", "S100A9", "VCAN", "LST1", "SELL", 
+                                        "CCR2", "THBS1", "IL1B",  "ADAMDEC1", "CD62L",
+                                        "MAMU-DRB1", "CD86", "IL10", "CD209", "SPP1", 
+                                        "FOLR2", "FCGR1A", "HMOX1", "LYVE1", "CCL2", 
+                                        "CLEC7A", "MRC1", "CD163", "CD68", "CD14", 
+                                        "CSF1R", "C1QB", "CCL17", "RPS4Y1"
+                           ), 
+                           group.by = "cell_type_v3",
+                           remove_axis_titles = FALSE,  
+                           flip_axes = TRUE, 
+                           x_lab_rotate = TRUE, 
+                           colors_use = gradient) + 
+  labs(x = "Gene", y = "Cluster")
+
+Fig_5D_filtered <- Fig_5D + 
+  scale_y_discrete(limits = c("NEUT","MAC1", "MAC2", "MAC3", "Mo-MAC1", "Mo-MAC2", "FMAC", "HB")) +
+  guides(size = guide_legend(title = "Percent expressed", order = 2),
+         color = guide_colorbar(title = "Avg. Expression (scaled)", order = 1))
+
+Fig_5D_filtered
+
+ggsave("5d_dot_mac.pdf", width = 15, height = 10)
+```
+
+```{r uNK}
+# 6D
+# uNK
+# ENSMMUG00000013289 = LILRB1
+# ENSMMUG00000063583 = GNLY
+Fig_6D <- DotPlot_scCustom(placenta_mapped, 
+                           features = c("FCGR3", "NCAM1", "ITGAM", "ITGA1", "ENTPD1",
+                                        "ENSMMUG00000013289", "KLRB1", "PRF1", "ENSMMUG00000063583", "GZMA", 
+                                        "GZMB", "NKG7", "CTSW", "GZMM", "XCL1", 
+                                        "ITGAE", "BICDL1", "STAT4", "NKG2D", "CD57", 
+                                        "CSFR2", "EOMES", "CD39", "CD73", "ADORA3", 
+                                        "CSF1", "CSF1R", "CCL5", "CCR1", "XCR1"
+                           ), 
+                           group.by = "cell_type_v4",
+                           remove_axis_titles = FALSE,  
+                           flip_axes = TRUE, 
+                           x_lab_rotate = TRUE, 
+                           colors_use = gradient) + 
+  labs(x = "Gene", y = "Cluster")
+
+Fig_6D_filtered <- Fig_6D + 
+  scale_y_discrete(limits = c("uNK1", "uNK2", "uNK3")) +
+  guides(size = guide_legend(title = "Percent expressed", order = 2),
+         color = guide_colorbar(title = "Avg. Expression (scaled)", order = 1))
+
+Fig_6D_filtered
+
+ggsave("6d_dot_nk.pdf", width = 15, height = 10)
+```
+
+```{r T-cell}
+# 7D
+# T cell
+# ENSMMUG00000003532 = CD8B
+Fig_7D <- DotPlot_scCustom(placenta_mapped, 
+                           features = c("CD3D", "CD4", "ENSMMUG00000003532", "CD8A", "FCGR3", 
+                                        "NCAM1", "TRAC", "ICOS", "CD69", "ITK", 
+                                        "THEMIS", "GRAP2", "CD28", "CD6", "BCL11B", 
+                                        "ITGAE", "IL7R", "PDCD1", "IFNG",  "FOXP3", 
+                                        "IL2RA", "ITGA1", "NKG2A", "CD94", "KLRB1", 
+                                        "NKG7", "NKG2D", "PRF1", "GZMA", "GZMB",
+                                        "GZMK",  "GZMM", "TIGIT", "CCL5", "ITGA4", 
+                                        "CD38", "CD7", "KLRD1", "ZBTB38", "ZBTB16"
+                           ), 
+                           group.by = "cell_type_v3",
+                           remove_axis_titles = FALSE,  
+                           flip_axes = TRUE, 
+                           x_lab_rotate = TRUE, 
+                           colors_use = gradient) + 
+  labs(x = "Gene", y = "Cluster")  
+
+Fig_7D_filtered <- Fig_7D + 
+  scale_y_discrete(limits = c("TRM", "CD8-TRM", "NK", "CD4-T")) +
+  guides(size = guide_legend(title = "Percent expressed", order = 2),
+         color = guide_colorbar(title = "Avg. Expression (scaled)", order = 1))
+
+Fig_7D_filtered
+
+ggsave("7d_dot_t.pdf", width = 15, height = 10)
+```
+
+```{r DSC}
+# 8D
+# DSC
+Fig_8D <- DotPlot_scCustom(placenta_mapped, 
+                           features = c("CCND1", "PDGFRA", "PDGFRB", "HOXA11", "POSTN", 
+                                        "TIMP3", "IGFBP1", "RGCC", "CXCL12", "APOD", 
+                                        "PGR", "HAND2", "WT1", "FOXO1", "COL4A5", 
+                                        "DKK1", "PRL", 'WNT5A'
+                           ), 
+                           group.by = "cell_type_v4",
+                           remove_axis_titles = FALSE,  
+                           flip_axes = TRUE, 
+                           x_lab_rotate = TRUE, 
+                           colors_use = gradient) + 
+  labs(x = "Gene", y = "Cluster")
+
+Fig_8D_filtered <- Fig_8D + 
+  scale_y_discrete(limits = c("ESC", "DSC1", "DSC2")) +
+  guides(size = guide_legend(title = "Percent expressed", order = 2),
+         color = guide_colorbar(title = "Avg. Expression (scaled)", order = 1))
+ 
+Fig_8D_filtered
+
+ggsave("8d_dot_dsc.pdf", width = 15, height = 10)
+```
+
+```{r Misc}
+# 9 
+# Misc
+Fig_9 <- DotPlot_scCustom(placenta_mapped, 
+                          features = c("PDGFRB", "MCAM", "MYH11", "ACTA2", "THY1", 
+                                       "COL6A2", "DCN", "LUM", "VIM", "FN1", 
+                                       "PECAM1", "VWF", "CDH5", "TEK", "KDR"
+                          ), 
+                          group.by = "cell_type_v3",
+                          remove_axis_titles = FALSE,  
+                          flip_axes = TRUE, 
+                          x_lab_rotate = TRUE, 
+                          colors_use = gradient) + 
+  labs(x = "Gene", y = "Cluster")
+
+Fig_9_filtered <- Fig_9 + 
+  scale_y_discrete(limits = c("PC", "FIB", "EC")) +
+  guides(size = guide_legend(title = "Percent expressed", order = 2),
+         color = guide_colorbar(title = "Avg. Expression (scaled)", order = 1))
+
+Fig_9_filtered
+
+ggsave("9_dot_misc.pdf", width = 15, height = 10)
+```
